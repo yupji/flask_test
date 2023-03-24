@@ -22,7 +22,7 @@ try:
             WHERE
                 uid='guest'
             AND
-                upw='1234'
+                upw='1234';
         '''
         cursor.execute( sql )
         row = cursor.fetchone()
