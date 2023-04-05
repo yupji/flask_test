@@ -11,7 +11,7 @@ from service import db
 # String : 제한된 텍스트(varchar), Text : 제한없는 텍스트(text)
 class Question(db.Model):
     id          = db.Column(db.Integer,     primary_key=True)
-    table       = db.Column(db.String(256), nullable=False)
+    title       = db.Column(db.String(256), nullable=False)
     content     = db.Column(db.Text(),      nullable=False)
     reg_date    = db.Column(db.DateTime(),  nullable=False)
     pass
