@@ -1,3 +1,8 @@
+'''
+    메인 서비스를 구축하는 컨트롤러
+    - 라우트 : URL과 이를 처리할 함수 연계
+    - 비즈니스 로직 : 사용가 요청하는 주 내용을 처리한는 곳
+'''
 from flask import render_template, request, url_for, jsonify
 from service.controllers import bp_auth as auth
 # 시간정보획득, 시간차를 계산하는 함수
@@ -11,11 +16,11 @@ import bcrypt
 # ~/auth
 @auth.route('/')
 def home():
-    # 별칭, 함수명 => url_for( 앞의 내용 기입 ) => url이 리턴된다
+    # url_for( "별칭.함수명" ) => url이 리턴된다
     print( url_for('auth_bp.login') )
     return "auth 홈"
 
-@auth.route('/login', methods=['GET', 'POST'])
+@auth.route('/login', methods=['GET','POST'])
 def login():
     if request.method == 'GET':
         return render_template('login.html')
@@ -24,17 +29,17 @@ def login():
         # 1. uid, upw 획득
         uid = request.form.get('uid')
         upw = request.form.get('upw')
-        # 2. uid, upw로 회원이 존재하는지 체크 -> (원래는디비, 여기선 임시로 값 비교)
+        # 2. uid, upw로 회원이 존재하는지 체크->(원래디비, 임시로값비교)
         if uid=='guest' and upw=='1234':
-            # 3. 회원이면 토큰 생성 (규격, 만료시간, 암호알고리즘 지정, .. )
+            # 3. 회원이면 토큰 생성 (규격, 만료시간, 암호알고리즘 지정,..)
             payload = { 
                 # 저장할 정보는 알아서 구성(고객 정보가 기반)
                 'id':uid,
                 # 만료시간 (원하는대로 설정)
-                # 토큰이 발급되고 나서 + 24시간 후에 토큰이 만료된다
+                # 토큰이 발급되고 나서 + 24시간 후에 토큰은 만료된다
                 'exp':datetime.utcnow() + timedelta(seconds=60*60*24)
             }
-            # 토큰 발급 => 시크릿키, 해시알고리즘('HS256'), 데이터(payload)
+            # 토큰 발급 => 시크릿키, 해시알고리즘("HS256"), 데이터(payload)
             SECRET_KEY = current_app.config['SECRET_KEY'] # 환경변수값 획득
             # 발급
             token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
@@ -54,7 +59,6 @@ def signup():
     # 확인및 복호화
     # bcrypt.checkpw() => 이것으로 암호가 일치하는지만 체크해서 로그인시 활용
     print( password, b, bcrypt.checkpw(password.encode('utf-8'), b) )
-
     return "auth signup"
 
 @auth.route('/delete')
