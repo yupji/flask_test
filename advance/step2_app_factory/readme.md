@@ -136,19 +136,24 @@
             - --app service 은 없어도 되는데, 이 앱은 app or wsfi로 시작하는 엔트리가 없어서 별도로 지정해야한다
             - flask --app service db init 
                 - sqlite : 소형데이터베이스, 스마트폰에 사용하는 DB 이 경우에는 데이터베이스 생성을 자동으로 해줌, 파일럿 형태에서 사용
-                - mysql 같은 데이터베이스(케이스별로 상이)는 실제로는 생성 안됨
+                - mysql 같은 데이터베이스(케이스별로 상이)는 실제로는 생성 않됨
 
             - migrations 폴더가 생긴다(내부는 자동으로 만드어지는 구조이므로, 관여하지 않는다), 단 versions 밑으로 수정할때마다 새로운 버전의 DB 관련 생성된다
+        
         - 모델(테이블) 생성, 변경
+            - model > models.py에 테이블 관련 내용 기술
+            - service>__init__.py
+                - from .model import models : 주석해제, 신규작성
             - flask --app service db migrate
-                '''
-                +-----------------+
-                | Tables_in_my_db |
-                +-----------------+
-                | alembic_version |
-                +-----------------+
-                1 row in set (0.001 sec)
-                '''
+                ```
+                    +-----------------+
+                    | Tables_in_my_db |
+                    +-----------------+
+                    | alembic_version |
+                    +-----------------+
+                    1 row in set (0.000 sec)
+                ```
+
         - 모델(테이블) 생성, 변경후 데이터베이스에 적용
             - flask --app service db upgrade
         - 컨테이너 이미지 생성시
@@ -168,25 +173,71 @@
                 db.session.add( q1 ) 
                 db.session.commit()
                 ```
-            - 질문 조회
-                '''
-                # 전체 데이터 조회
-                 
-                '''
+            - 질문 조회 
+                ```
+                # 전체 데이터 조회 : select * from question;
+                qs = Question.query.all()
+                qs[0]
+                <Question 1>
+                qs[0].title
+                '질문1'
+                # id값을 넣어서 조회 : select * from question where id=1;
+                Question.query.get(1)
+                # 내용중에 '용' 문자열이 존재하면 다가져오시오
+                # select * from question where content like '%용%';
+                # %용, %용%, 용% <- 내용 검색
+                Question.query.filter( Question.content.like('%용%')).all()
+                ```
             - 질문 수정
-                '''
+                ```
                     q1 = Question.query.get(1)
                     # 변경하고 싶은 부분은 수정
                     # update question set title='질문1111111' where id=1;
                     q1.title = "질문1111111"
                     db.session.commit()
-                '''
+                ```
             - 질문 삭제
-                '''
+                ```
                     q1 = Question.query.get(1)
                     # delete from question where id=1;
                     db.session.delete( q1 )
                     db.session.commit()
-                '''
+                ```
             - 답변 등록
-                ...
+                ```
+                    # 질문 2개 추가                    
+                    # 질문 1개를 찾고 -> 답변을 등록
+                    q2 = Question.query.get(2)
+                    # 답변 생성
+                    a = Answer(question=q2, content="질문에 대한 답변입니다", reg_date=datetime.now())
+                    # 등록
+                    db.session.add(a)
+                    # 커밋
+                    db.session.commit()
+                ```
+            - 답변을 통해서 질문 찾기
+                ```
+                    a.question
+                ```
+            - 질문을 통해서 답변 찾기
+                ```
+                    # 역참조의 이름을 사용하여 답변들을 다 찾아온다
+                    q2.answer_set
+                ```
+            - 질문을 삭제하면 답변도 다 삭제되는가?
+                ```
+                    db.session.delete( q2 )
+                    db.session.commit()
+                    
+                    # 답변의 참조 question_id 값만 무효화 되었다
+                    # 작성자가 서로 다르므로, 삭제 권리는 없고, 참조만 제거
+                    MariaDB [my_db]> select * from answer;
+                    +----+-------------+----------------------------------+---------------------+
+                    | id | question_id | content                          | reg_date            |
+                    +----+-------------+----------------------------------+---------------------+
+                    |  1 |        NULL | 질문에 대한 답변입니다           | 2023-04-05 13:13:50 |
+                    +----+-------------+----------------------------------+---------------------+
+                    # 본인  답변 삭제
+                    db.session.delete( a )
+                    db.session.commit()
+                ```
